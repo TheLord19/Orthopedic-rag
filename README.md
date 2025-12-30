@@ -1,65 +1,139 @@
-﻿# OrthoInsight
+# OrthoInsight
 
-Orthopedic RAG Assistant
-OrthoInsight is a specialized medical research assistant designed to answer orthopedic queries with high accuracy. Built on a Retrieval-Augmented Generation (RAG) architecture, it grounds its responses in a curated dataset of research papers, clinical guidelines, and anatomical atlases to minimize hallucinations and provide evidence-based insights.
+## Orthopedic RAG Assistant
 
-The application features a multi-modal interface capable of processing text, voice, and image inputs, serving as a support tool for clinicians, researchers, and medical students.
+OrthoInsight is a specialized medical research assistant designed to answer orthopedic queries with high accuracy. Built on a **Retrieval-Augmented Generation (RAG)** architecture, it grounds responses in curated orthopedic literature to minimize hallucinations and ensure evidence-based insights.
 
-Key Features
-Domain-Specific RAG Engine Retrieves context from indexed orthopedic literature before generating answers to ensure technical accuracy.
+The application supports **text, voice, and image inputs**, making it suitable for clinicians, researchers, and medical students.
 
-Multi-Modal Input The system supports three distinct input modes. Text mode accepts complex clinical queries and case descriptions. Voice mode integrates speech-to-text functionality for hands-free operation. Vision mode analyzes uploaded medical imagery (X-rays, MRI slices) alongside text prompts.
+---
 
-Contextual Chat History Maintains conversation state to facilitate iterative questioning and follow-up inquiries.
+## Key Features
 
-Source Transparency Capable of citing specific guidelines or papers used during the generation process.
+- **Domain-Specific RAG Engine**  
+  Retrieves context from indexed orthopedic research papers, clinical guidelines, and anatomical atlases.
 
-Responsive Design Optimized for use on both desktop workstations and mobile tablet devices in clinical settings.
+- **Multi-Modal Input**  
+  - Text-based clinical queries  
+  - Voice input with speech-to-text  
+  - Medical image analysis (X-rays, MRI) with prompts
 
-Technical Stack
-Framework: Next.js (App Router) Language: TypeScript Styling: Tailwind CSS AI Orchestration: LangChain / Vercel AI SDK Model Provider: OpenAI (GPT-4 / GPT-4-Vision) Vector Database: Pinecone (or compatible vector store) Deployment: Vercel
+- **Contextual Chat History**  
+  Maintains conversation state for follow-up queries.
 
-Project Structure
-The project follows a standard Next.js App Router architecture. The app directory contains application routes and page logic, including the API endpoints for chat and RAG retrieval. The components directory houses reusable React components for chat rendering, UI elements, and voice input handling. The lib directory contains utility libraries and the RAG implementation logic.
+- **Source Transparency**  
+  Can cite specific research papers or guidelines used during response generation.
 
-Installation and Setup
-Prerequisites
-Ensure you have Node.js (Version 18 or higher) installed, along with API Keys for the LLM provider (OpenAI) and your Vector Database.
+- **Responsive Design**  
+  Optimized for desktop and tablet use in clinical environments.
 
-Steps
-1. Clone the Repository Run the following command to download the source code:
+---
 
-Bash
+## Technical Stack
 
+- Framework: Next.js (App Router)
+- Language: TypeScript
+- Styling: Tailwind CSS
+- AI Orchestration: LangChain, Vercel AI SDK
+- Model Provider: OpenAI (GPT-4, GPT-4-Vision)
+- Vector Database: Pinecone
+- Deployment: Vercel
+
+---
+
+## Project Structure
+```
+.
+├── app/ # Routes, pages, API endpoints
+├── components/ # Reusable UI components
+├── lib/ # RAG logic and utilities
+├── public/ # Static assets
+└── .env.local # Environment variables
+
+```
+
+---
+
+## Installation and Setup
+
+### Prerequisites
+
+- Node.js v18 or higher
+- OpenAI API Key
+- Pinecone API Key and Index
+
+---
+
+### 1. Clone the Repository
+
+```bash
 git clone https://github.com/TheLord19/Orthopedic-rag.git
+
 cd Orthopedic-rag
-2. Install Dependencies Install the required project libraries:
+```
 
-Bash
-
+2. Install Dependencies
+```
 npm install
-3. Environment Configuration Create a file named .env.local in the root directory and configure the variables for OPENAI_API_KEY, PINECONE_API_KEY, PINECONE_INDEX, and NEXT_PUBLIC_APP_URL.
+```
+3. Environment Configuration
 
-4. Run Development Server Start the local development environment:
+Create a file named .env.local in the root directory:
+```
+OPENAI_API_KEY=your_openai_key
+PINECONE_API_KEY=your_pinecone_key
+PINECONE_INDEX=your_index_name
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-Bash
-
+4. Run Development Server
+```
 npm run dev
-The application will be accessible at http://localhost:3000.
+```
 
-Architecture Workflow
-Ingestion Medical documents are processed, chunked, and embedded into the vector database.
 
-Retrieval User queries are converted into vector embeddings to search for semantically relevant text chunks within the database.
+Open in browser:
+```
+http://localhost:3000
+```
 
-Generation The retrieved context and the user query are passed to the Large Language Model.
+Architecture Workflow:
+```
+Medical Documents
+        |
+        v
+ Ingestion & Chunking
+        |
+        v
+ Vector Embeddings
+        |
+        v
+   Vector Database
+        |
+        v
+User Query → Retrieval → LLM → Response
+```
 
-Response The model generates an answer based strictly on the provided medical context.
+RAG Pipeline
+
+Ingestion
+Documents are processed, chunked, and embedded.
+Retrieval
+User queries are embedded and matched against vector data.
+
+Generation
+Retrieved context and query are passed to the LLM.
+Response
+Answer is generated strictly from medical context.
 
 Medical Disclaimer
-For Research and Educational Use Only.
+For Research and Educational Use Only
 
-OrthoInsight is an AI-assisted tool and is not a substitute for professional medical judgment, diagnosis, or treatment. While the system aims to provide accurate information based on medical literature, all outputs should be verified against primary clinical sources before application in patient care.
+OrthoInsight is not a substitute for professional medical judgment, diagnosis, or treatment.
+All outputs must be verified using primary clinical sources.
 
 License
-This project is licensed under the MIT License.
+```
+MIT License
+```
+
