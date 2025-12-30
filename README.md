@@ -1,83 +1,65 @@
 ﻿# OrthoInsight
 
-OrthoInsight is a specialized Retrieval-Augmented Generation (RAG) assistant designed for the orthopedic domain. It serves as an intelligent research companion for clinicians, researchers, and students, providing evidence-based answers regarding orthopedic conditions, surgical procedures, and clinical guidelines.
+Orthopedic RAG Assistant
+OrthoInsight is a specialized medical research assistant designed to answer orthopedic queries with high accuracy. Built on a Retrieval-Augmented Generation (RAG) architecture, it grounds its responses in a curated dataset of research papers, clinical guidelines, and anatomical atlases to minimize hallucinations and provide evidence-based insights.
 
-The application leverages a knowledge base of medical literature to ground its responses, minimizing hallucinations common in general-purpose LLMs.
+The application features a multi-modal interface capable of processing text, voice, and image inputs, serving as a support tool for clinicians, researchers, and medical students.
 
-Core Functionality
-Domain-Specific RAG: The system retrieves context from a curated index of orthopedic research papers, clinical guidelines, and anatomy atlases before generating a response.
+Key Features
+Domain-Specific RAG Engine Retrieves context from indexed orthopedic literature before generating answers to ensure technical accuracy.
 
-Multi-Modal Interaction: Supports inputs via text, voice, and image upload, allowing users to query using diverse data formats.
+Multi-Modal Input The system supports three distinct input modes. Text mode accepts complex clinical queries and case descriptions. Voice mode integrates speech-to-text functionality for hands-free operation. Vision mode analyzes uploaded medical imagery (X-rays, MRI slices) alongside text prompts.
 
-Contextual Chat History: Maintains conversation state to allow for follow-up questions and iterative research.
+Contextual Chat History Maintains conversation state to facilitate iterative questioning and follow-up inquiries.
 
-Resource Access: Provides direct access/citations to the underlying medical resources used for generation.
+Source Transparency Capable of citing specific guidelines or papers used during the generation process.
 
-Technical Architecture
-Frontend
+Responsive Design Optimized for use on both desktop workstations and mobile tablet devices in clinical settings.
 
-Framework: Next.js (React)
+Technical Stack
+Framework: Next.js (App Router) Language: TypeScript Styling: Tailwind CSS AI Orchestration: LangChain / Vercel AI SDK Model Provider: OpenAI (GPT-4 / GPT-4-Vision) Vector Database: Pinecone (or compatible vector store) Deployment: Vercel
 
-Deployment: Vercel Edge Network
-
-UI/UX: Responsive interface with specialized input modes (Text/Voice/Vision).
-
-Backend (Inferred)
-
-Pattern: Retrieval-Augmented Generation (RAG)
-
-Vector Database: Stores embeddings of medical texts for semantic search.
-
-Inference Engine: Large Language Model (LLM) optimized for medical reasoning.
-
-Usage Scenarios
-Clinical Decision Support: Quickly retrieving standard-of-care guidelines for specific fractures or conditions.
-
-Academic Research: Summarizing recent papers on surgical techniques or post-operative outcomes.
-
-Anatomical Review: Analyzing queries related to musculoskeletal structure and pathology.
+Project Structure
+The project follows a standard Next.js App Router architecture. The app directory contains application routes and page logic, including the API endpoints for chat and RAG retrieval. The components directory houses reusable React components for chat rendering, UI elements, and voice input handling. The lib directory contains utility libraries and the RAG implementation logic.
 
 Installation and Setup
 Prerequisites
-Node.js (LTS version recommended)
-
-API Keys for the LLM provider and Vector Database (configured in .env)
+Ensure you have Node.js (Version 18 or higher) installed, along with API Keys for the LLM provider (OpenAI) and your Vector Database.
 
 Steps
-Clone the Repository
+1. Clone the Repository Run the following command to download the source code:
 
 Bash
 
-git clone https://github.com/your-username/ortho-insight.git
-cd ortho-insight
-Install Dependencies
+git clone https://github.com/TheLord19/Orthopedic-rag.git
+cd Orthopedic-rag
+2. Install Dependencies Install the required project libraries:
 
 Bash
 
 npm install
-Environment Configuration Create a .env.local file in the root directory and add your required keys:
+3. Environment Configuration Create a file named .env.local in the root directory and configure the variables for OPENAI_API_KEY, PINECONE_API_KEY, PINECONE_INDEX, and NEXT_PUBLIC_APP_URL.
 
-Bash
-
-NEXT_PUBLIC_API_URL=your_backend_url
-OPENAI_API_KEY=your_key_here
-# Add specific vector DB keys if applicable
-Run Development Server
+4. Run Development Server Start the local development environment:
 
 Bash
 
 npm run dev
-Build for Production
+The application will be accessible at http://localhost:3000.
 
-Bash
+Architecture Workflow
+Ingestion Medical documents are processed, chunked, and embedded into the vector database.
 
-npm run build
-npm start
+Retrieval User queries are converted into vector embeddings to search for semantically relevant text chunks within the database.
+
+Generation The retrieved context and the user query are passed to the Large Language Model.
+
+Response The model generates an answer based strictly on the provided medical context.
+
 Medical Disclaimer
-Beta Software: This application is currently in Beta.
+For Research and Educational Use Only.
 
-Not Medical Advice: OrthoInsight is an automated research tool intended for educational and informational purposes only. It is not a diagnostic tool and should not replace professional medical judgment. All outputs should be verified against primary clinical sources.
+OrthoInsight is an AI-assisted tool and is not a substitute for professional medical judgment, diagnosis, or treatment. While the system aims to provide accurate information based on medical literature, all outputs should be verified against primary clinical sources before application in patient care.
 
 License
-[Insert License Type Here, e.g., MIT, Proprietary]
-
+This project is licensed under the MIT License.
