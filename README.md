@@ -6,8 +6,6 @@ OrthoInsight is a specialized medical research assistant designed to answer orth
 
 The application supports **text, voice, and image inputs**, making it suitable for clinicians, researchers, and medical students.
 
----
-
 ## Key Features
 
 - **Domain-Specific RAG Engine**  
@@ -27,7 +25,6 @@ The application supports **text, voice, and image inputs**, making it suitable f
 - **Responsive Design**  
   Optimized for desktop and tablet use in clinical environments.
 
----
 
 ## Technical Stack
 
@@ -39,7 +36,7 @@ The application supports **text, voice, and image inputs**, making it suitable f
 - Vector Database: Pinecone
 - Deployment: Vercel
 
----
+ 
 
 ## Project Structure
 ```
@@ -52,7 +49,6 @@ The application supports **text, voice, and image inputs**, making it suitable f
 
 ```
 
----
 
 ## Installation and Setup
 
@@ -62,7 +58,7 @@ The application supports **text, voice, and image inputs**, making it suitable f
 - OpenAI API Key
 - Pinecone API Key and Index
 
----
+ 
 
 ### 1. Clone the Repository
 
@@ -136,4 +132,5 @@ License
 ```
 MIT License
 ```
+
 
