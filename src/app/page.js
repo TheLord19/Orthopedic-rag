@@ -1,108 +1,179 @@
 // src/app/page.js
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Header from '@/components/layout/Header';
-import ChatInterface from '@/components/chat/ChatInterface';
-import ResultsPanel from '@/components/results/ResultsPanel';
-import Sidebar from '@/components/layout/Sidebar';
+import { useState } from "react";
+import Header from "@/components/layout/Header";
+import Sidebar from "@/components/layout/Sidebar";
+import Footer from "@/components/layout/Footer";
+import ChatInterface from "@/components/chat/ChatInterface";
+import ResultsPanel from "@/components/results/ResultsPanel";
+import VisualData from "@/components/results/VisualData";
+import useRagApi from "@/hooks/useRagApi";
+import useLocalStorage from "@/hooks/useLocalStorage";
+import {
+  DEFAULT_SUGGESTED_QUESTIONS,
+  HISTORY_STORAGE_KEY,
+} from "@/utils/constants";
 
 export default function Home() {
   const [queryResults, setQueryResults] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState([]);
+  const [imageResult, setImageResult] = useState(null);
+  const [chatHistory, setChatHistory] = useLocalStorage(
+    HISTORY_STORAGE_KEY,
+    [],
+  );
+  const [activeChatId, setActiveChatId] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sessionKey, setSessionKey] = useState(0);
+  const { query, analyzeImage, isLoading, isAnalyzing, error, clearError } =
+    useRagApi();
 
-  const handleSearch = async (query, context = {}) => {
-    setIsLoading(true);
-    
+  const handleSearch = async (searchQuery, context = {}) => {
     try {
-      // Simulate API call - replace with actual API endpoint
-      setTimeout(() => {
-        const mockResults = {
-          answer: "Based on current orthopedic research, the most effective treatment for ACL tears depends on the patient's activity level and the extent of the injury. For young, active patients, surgical reconstruction using a patellar tendon or hamstring autograft is often recommended. For less active patients, conservative treatment with physical therapy may be sufficient.",
-          sources: [
-            {
-              id: 1,
-              title: "ACL Reconstruction Techniques: A Comprehensive Review",
-              authors: "Smith, J., Johnson, A., & Williams, R.",
-              journal: "Journal of Orthopedic Surgery",
-              year: 2023,
-              volume: "15",
-              issue: "2",
-              pages: "112-125",
-              url: "#",
-              relevance: 0.95,
-              excerpt: "Our meta-analysis of 35 studies found that autograft reconstruction resulted in significantly better outcomes for young athletes compared to allografts or conservative treatment."
-            },
-            {
-              id: 2,
-              title: "Rehabilitation Protocols Following ACL Reconstruction",
-              authors: "Chen, L., Martinez, K., & Brown, T.",
-              journal: "Clinical Orthopedics and Related Research",
-              year: 2022,
-              volume: "480",
-              issue: "5",
-              pages: "892-905",
-              url: "#",
-              relevance: 0.87,
-              excerpt: "Early weight-bearing and controlled motion exercises initiated within the first two weeks post-surgery showed improved range of motion outcomes without compromising graft integrity."
-            }
-          ],
-          confidence: 0.92,
-          suggestedQuestions: [
-            "What are the success rates of different ACL graft types?",
-            "How long is the recovery period after ACL reconstruction?",
-            "What are the common complications of ACL surgery?"
-          ]
-        };
-        
-        setQueryResults(mockResults);
-        setIsLoading(false);
-        
-        // Add to chat history
-        setChatHistory(prev => [...prev, {
-          id: Date.now(),
-          query,
-          response: mockResults,
-          timestamp: new Date().toISOString()
-        }]);
-      }, 1500);
-    } catch (error) {
-      console.error('Search error:', error);
-      setIsLoading(false);
+      const results = await query(searchQuery, context);
+      setQueryResults(results);
+
+      const entry = {
+        id: Date.now(),
+        query: searchQuery,
+        response: results,
+        timestamp: new Date().toISOString(),
+      };
+      setChatHistory((prev) => [entry, ...prev].slice(0, 50));
+      setActiveChatId(entry.id);
+    } catch {
+      // error state is surfaced by the useRagApi hook
     }
   };
 
+  const handleAnalyzeImage = async (file) => {
+    const previewUrl = URL.createObjectURL(file);
+    try {
+      const result = await analyzeImage(file);
+      setImageResult((prev) => {
+        if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
+        return { ...result, previewUrl, fileName: file.name };
+      });
+    } catch {
+      URL.revokeObjectURL(previewUrl);
+    }
+  };
+
+  const handleNewChat = () => {
+    setQueryResults(null);
+    setImageResult((prev) => {
+      if (prev?.previewUrl) URL.revokeObjectURL(prev.previewUrl);
+      return null;
+    });
+    setActiveChatId(null);
+    clearError();
+    setSessionKey((k) => k + 1);
+    setSidebarOpen(false);
+  };
+
+  const handleSelectChat = (chat) => {
+    setQueryResults(chat.response);
+    setActiveChatId(chat.id);
+    setSidebarOpen(false);
+  };
+
+  const handleDeleteChat = (chatId) => {
+    setChatHistory((prev) => prev.filter((chat) => chat.id !== chatId));
+    if (chatId === activeChatId) {
+      setQueryResults(null);
+      setActiveChatId(null);
+    }
+  };
+
+  const hasResults = Boolean(
+    queryResults || imageResult || isLoading || isAnalyzing,
+  );
+
   return (
     <main className="main-content">
-      <Header 
-        onMenuToggle={() => setSidebarOpen(!sidebarOpen)} 
+      <Header
+        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
         sidebarOpen={sidebarOpen}
       />
-      
+
       <div className="content-wrapper">
-        <Sidebar 
-          isOpen={sidebarOpen} 
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
           chatHistory={chatHistory}
-          onSelectChat={(chat) => setQueryResults(chat.response)}
+          activeChatId={activeChatId}
+          onSelectChat={handleSelectChat}
+          onDeleteChat={handleDeleteChat}
+          onNewChat={handleNewChat}
         />
-        
+
         <div className="main-panel">
-          <ChatInterface 
-            onSearch={handleSearch}
-            isLoading={isLoading}
-            suggestedQuestions={queryResults?.suggestedQuestions || []}
-          />
-          
-          {queryResults && (
-            <ResultsPanel 
-              results={queryResults}
-              isLoading={isLoading}
-            />
-          )}
+          <div
+            className={`workspace ${hasResults ? "has-results" : ""}`.trim()}
+          >
+            <div className="chat-column">
+              {error && (
+                <div className="error-banner" role="alert">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M12 8V12M12 16H12.01"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <p>{error}</p>
+                  <button className="copy-btn" onClick={clearError}>
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              <ChatInterface
+                key={sessionKey}
+                onSearch={handleSearch}
+                onAnalyzeImage={handleAnalyzeImage}
+                isLoading={isLoading}
+                isAnalyzing={isAnalyzing}
+                suggestedQuestions={
+                  queryResults?.suggestedQuestions ||
+                  DEFAULT_SUGGESTED_QUESTIONS
+                }
+                latestResults={queryResults}
+              />
+            </div>
+
+            {hasResults && (
+              <div className="results-column">
+                {(imageResult || isAnalyzing) && (
+                  <VisualData
+                    analysis={imageResult}
+                    isAnalyzing={isAnalyzing}
+                  />
+                )}
+                {(queryResults || isLoading) && (
+                  <ResultsPanel results={queryResults} isLoading={isLoading} />
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      <Footer />
     </main>
   );
 }
