@@ -24,9 +24,21 @@ yarn-error.log*
 
 # Local env files
 .env*.local
+.env
 
 # Vercel
 .vercel
+
+# SSH keys (accidental commits)
+2.txt
+2.txt.pub
+*.pem
+id_*
+
+# Python backend
+backend/__pycache__/
+backend/onnx_models/
+backend/.venv/
 
 # TypeScript
 *.tsbuildinfo
