@@ -22,31 +22,33 @@ OrthoInsight is a multi-modal clinical decision-support prototype that combines 
 
 ## 🚀 Quick Start
 
-### 1. Frontend only (no backend — uses simulated responses)
+**The backend must be running for the app to do anything.** There is no
+built-in simulated or hardcoded fallback — if `NEXT_PUBLIC_API_BASE` isn't
+set and reachable, the chat and X-ray endpoints return a clear "backend not
+configured" error instead of a fabricated answer.
+
+### 1. Start the backend (real PubMed RAG)
 
 ```bash
+cd backend
+pip install -r requirements.txt
+uvicorn server:app --host 0.0.0.0 --port 8000
+```
+
+No API keys required — PubMed's E-utilities API is free and the embedding
+model (`all-MiniLM-L6-v2`) runs locally on CPU.
+
+### 2. Start the frontend, pointed at the backend
+
+```bash
+# In a second terminal, with the backend from step 1 still running
 cd orthopedic_rag
+cp .env.example .env.local   # sets NEXT_PUBLIC_API_BASE=http://localhost:8000
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The app works immediately with built-in simulated RAG and X-ray responses — no API keys or backend required.
-
-### 2. Full stack (frontend + Python backend with real PubMed RAG)
-
-```bash
-# Terminal 1 — Backend
-cd orthopedic_rag/backend
-pip install -r requirements.txt
-uvicorn server:app --host 0.0.0.0 --port 8000
-
-# Terminal 2 — Frontend
-cd orthopedic_rag
-cp .env.example .env.local
-npm run dev
-```
-
-The frontend auto-detects the backend and switches from simulation to real PubMed-powered responses.
+Open [http://localhost:3000](http://localhost:3000). Chat answers now come from real PubMed retrieval, not a canned response.
 
 ### 3. With OpenAI (richer RAG answers)
 
@@ -75,7 +77,7 @@ cd ../../orthopedic_rag/backend
 uvicorn server:app --port 8000
 ```
 
-When ONNX models are present, the `engine` field in API responses changes from `"simulation"` to `"onnx"`.
+Until the exported models are copied into `backend/onnx_models/`, `/api/analyze` returns a `503` explaining that inference isn't available yet — it does not return a fabricated prediction.
 
 ---
 
@@ -94,8 +96,8 @@ When ONNX models are present, the `engine` field in API responses changes from `
 │       ▼              ▼                                       │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │              API Routes (Next.js)                     │   │
-│  │  /api/query   → proxy to backend or simulated        │   │
-│  │  /api/analyze → proxy to backend or simulated        │   │
+│  │  /api/query   → proxy to backend (503 if not set)    │   │
+│  │  /api/analyze → proxy to backend (503 if not set)    │   │
 │  └──────────────────────┬───────────────────────────────┘   │
 └─────────────────────────┼───────────────────────────────────┘
                           │ NEXT_PUBLIC_API_BASE
@@ -194,15 +196,17 @@ Every citation includes a clickable PubMed link to the original paper.
 
 ---
 
-## 🧪 Evaluation Modes
+## 🧪 What's Real, and What Isn't Wired Up Yet
 
-| Mode | How to activate | RAG | X-ray |
-|---|---|---|---|
-| **Simulated** | No `NEXT_PUBLIC_API_BASE` set | Keyword-matched demo answers | Deterministic hash of filename+size |
-| **Real RAG** | Backend running, `NEXT_PUBLIC_API_BASE` set | PubMed → embeddings → generation | Simulation (no models) |
-| **Full stack** | Backend running + ONNX models in `backend/onnx_models/` | PubMed → embeddings → generation | Real 17-model ONNX inference |
+There is no simulated or hardcoded mode. Each feature is either doing the
+real thing, or honestly telling you it can't run yet:
 
-The `engine` field in every API response indicates which mode was used: `"simulation"`, `"pubmed-rag"`, or `"onnx"`.
+| Feature | Requires | If not met |
+|---|---|---|
+| **Chat / RAG** | `backend/server.py` running, `NEXT_PUBLIC_API_BASE` set | `503` — "no RAG backend configured" |
+| **X-ray analysis** | The above, **plus** exported `.onnx` weights in `backend/onnx_models/` | `503` — "ONNX models not found" |
+
+The `engine` field on a successful RAG response is `"pubmed-rag"`; a successful X-ray response is `"onnx"`. There is no `"simulation"` engine anymore.
 
 ---
 

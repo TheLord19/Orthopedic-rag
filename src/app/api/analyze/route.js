@@ -1,17 +1,10 @@
 // src/app/api/analyze/route.js
-// X-ray analysis endpoint — proxies to the Python backend when available,
-// otherwise uses a deterministic simulation (clearly labeled as such).
+// X-ray analysis endpoint — proxies to the Python backend's MURA ensemble.
+// There is no local/hardcoded fallback: if the backend isn't configured,
+// isn't reachable, or hasn't been given the exported ONNX weights yet, we
+// return an honest error instead of a fabricated prediction.
 
 const BACKEND = process.env.NEXT_PUBLIC_API_BASE || "";
-const TOTAL_MODELS = 17;
-
-function hashString(input) {
-  let hash = 0;
-  for (let i = 0; i < input.length; i += 1) {
-    hash = (hash * 31 + input.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash);
-}
 
 export async function POST(request) {
   let formData;
@@ -35,40 +28,42 @@ export async function POST(request) {
     );
   }
 
-  // ── Proxy to real backend (FastAPI + ONNX ensemble) ─────────────
-  if (BACKEND) {
-    try {
-      const backendForm = new FormData();
-      backendForm.append("image", file, file.name);
-      const resp = await fetch(`${BACKEND}/api/analyze`, {
-        method: "POST",
-        body: backendForm,
-        signal: AbortSignal.timeout(60000),
-      });
-      if (resp.ok) return Response.json(await resp.json());
-    } catch {
-      // Backend unreachable — fall through to simulation
-    }
+  if (!BACKEND) {
+    return Response.json(
+      {
+        error:
+          "No inference backend is configured. Set NEXT_PUBLIC_API_BASE to a " +
+          "running instance of backend/server.py (see README) — there is no " +
+          "simulated fallback for this endpoint.",
+      },
+      { status: 503 },
+    );
   }
 
-  // ── Simulation fallback ─────────────────────────────────────────
-  await new Promise((r) => setTimeout(r, 1400));
-
-  const seed = hashString(`${file.name}:${file.size}`);
-  const isAbnormal = seed % 100 < 55;
-  const probability = 0.62 + (seed % 34) / 100;
-  const confidence = isAbnormal ? probability : 1 - (1 - probability) * 0.4;
-  const votesAbnormal = isAbnormal
-    ? Math.min(TOTAL_MODELS, Math.round(TOTAL_MODELS * probability))
-    : Math.max(0, Math.round(TOTAL_MODELS * (1 - probability)));
-
-  return Response.json({
-    file: file.name,
-    prediction: isAbnormal ? "ABNORMAL" : "NORMAL",
-    probability: Number(probability.toFixed(3)),
-    confidence: Number(Math.min(confidence, 0.99).toFixed(3)),
-    votes_abnormal: votesAbnormal,
-    total_models: TOTAL_MODELS,
-    engine: "simulation",
-  });
+  try {
+    const backendForm = new FormData();
+    backendForm.append("image", file, file.name);
+    const resp = await fetch(`${BACKEND}/api/analyze`, {
+      method: "POST",
+      body: backendForm,
+      signal: AbortSignal.timeout(60000),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      return Response.json(
+        { error: data?.detail || data?.error || "Backend returned an error" },
+        { status: resp.status },
+      );
+    }
+    return Response.json(data);
+  } catch {
+    return Response.json(
+      {
+        error:
+          "Could not reach the analysis backend at " +
+          `${BACKEND}. Make sure backend/server.py is running (uvicorn server:app --port 8000).`,
+      },
+      { status: 502 },
+    );
+  }
 }

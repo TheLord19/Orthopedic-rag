@@ -2,8 +2,9 @@
 MURA Ensemble Inference
 ========================
 Runs the 17-model grand ensemble via ONNX Runtime.
-If ONNX models are not yet exported, a clearly-labeled simulation mode
-provides deterministic responses while documenting the expected contract.
+There is no simulated fallback here: if the exported ONNX weights aren't
+present in backend/onnx_models/, /api/analyze fails with a clear error
+rather than returning a fabricated prediction.
 
 To export models (one-time setup):
     cd deployment_ortho/mura_
@@ -12,7 +13,6 @@ To export models (one-time setup):
 """
 
 import glob
-import hashlib
 import os
 
 import numpy as np
@@ -106,40 +106,10 @@ def predict_real(image_path: str) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
-# Simulation fallback (clearly labeled)
-# ---------------------------------------------------------------------------
-def predict_simulated(file_path: str) -> dict:
-    """
-    Deterministic simulation for environments where ONNX models are not
-    yet exported.  Uses a stable hash of file-name + size so the same image
-    always returns the same result.  The 'engine' field is set to 'simulation'
-    so consumers can distinguish real from simulated results.
-    """
-    content = f"{os.path.basename(file_path)}:{os.path.getsize(file_path)}"
-    seed = int(hashlib.md5(content.encode()).hexdigest(), 16)
-    is_abnormal = (seed % 100) < 55
-    probability = 0.62 + (seed % 34) / 100.0
-    confidence = probability if is_abnormal else 1.0 - (1.0 - probability) * 0.4
-    votes = (
-        min(TOTAL_MODELS, round(TOTAL_MODELS * probability))
-        if is_abnormal
-        else max(0, round(TOTAL_MODELS * (1 - probability)))
-    )
-
-    return {
-        "file": os.path.basename(file_path),
-        "prediction": "ABNORMAL" if is_abnormal else "NORMAL",
-        "probability": round(probability, 4),
-        "confidence": round(min(confidence, 0.999), 4),
-        "votes_abnormal": votes,
-        "total_models": TOTAL_MODELS,
-        "engine": "simulation",
-    }
-
-
 def predict(file_path: str) -> dict:
-    """Auto-select real ONNX inference or documented simulation fallback."""
-    if _load_onnx_sessions():
-        return predict_real(file_path)
-    return predict_simulated(file_path)
+    """
+    Run the real ONNX ensemble. Raises RuntimeError (caught by server.py and
+    turned into a 503) if the exported weights aren't present — no
+    simulated fallback.
+    """
+    return predict_real(file_path)

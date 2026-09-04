@@ -48,8 +48,9 @@ async def lifespan(app: FastAPI):
         print(f"✓  ONNX models detected in {onnx_dir}")
     else:
         print(
-            "ℹ  No ONNX models found — X-ray endpoint will use documented "
-            "simulation mode. See README for model export instructions."
+            "⚠  No ONNX models found in "
+            f"{onnx_dir} — /api/analyze will return 503 until they are "
+            "exported and copied in. See README for instructions."
         )
     yield
 
@@ -111,6 +112,8 @@ async def analyze_endpoint(image: UploadFile = File(...)):
         result = ensemble_predict(tmp_path)
         result["file"] = image.filename or result["file"]
         return result
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     finally:
         os.unlink(tmp_path)
 
